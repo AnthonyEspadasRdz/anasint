@@ -78,7 +78,7 @@ struct _token{
 LISTA* listas[10];          // Arreglo que guarda las tablas generadas
 LISTA_T* tokens_L;          // Estructura que guarda los tokens generados
 int contador_cadenas = 0;   // Contador auxiliar para llevar control del indice de la tabla de cadenas
-int contador_lineas = 0;    // Contador auxiliar para llevar un control del numero de lineas analizadas
+int contador_lineas = 1;    // Contador auxiliar para llevar un control del numero de lineas analizadas
 
 // Prototipos de funciones
 LISTA* crearLista(int clase);
@@ -105,7 +105,8 @@ void generarAtomicas();
 
 dig     [0-9]
 let     [a-zA-Z]
-espacio " "|\n|\t
+salto   \n
+espacio " "|{salto}|\t
 signo   [\-+]
 oparit  {signo}|[*/%]
 simbesp [\(\)\{\};,\[\]:#]
@@ -149,10 +150,13 @@ opasig  {oparit}?=
 
 {opcad}     {fprintf(salida,"\n%s ==> genera token ==> ", yytext);
                                     agregarToken(9, yytext, yyleng);}   // Se agrega correspondiente al componente
-{espacio}   { }
 
-.           {fprintf(salida,"\n%s ==> Elemento no reconocido", yytext);
-             fprintf(errores,"Elemento no reconocido: %s\n", yytext);}
+{salto}     {contador_lineas++;}
+
+{espacio}   {}                                                          // Se contabiliza el salto de linea
+
+.          {fprintf(salida,"\n%s ==> Elemento no reconocido", yytext);
+             fprintf(errores,"Elemento \"%s\" no reconocido en linea %i\n", yytext, contador_lineas);}
 
 %%
 
@@ -186,6 +190,7 @@ int main()
     // Indica el termino del programa
     system("clear");
     printf("\nAnalisis terminao\n");
+    printf("El programa tiene %i lineas\n", contador_lineas);
     return 0;
 }
 
