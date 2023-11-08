@@ -119,6 +119,7 @@ oprel   [<>]|[<>!=]=
 oplog   !|(&|\|){2}
 opcad   &|like
 opasig  {oparit}?=
+misigno ({let}|{dig})+
 
 %%
 {oparit}    {fprintf(salida,"\n%s  ==> genera token ==> ", yytext);
@@ -151,11 +152,14 @@ opasig  {oparit}?=
 {opcad}     {fprintf(salida,"\n%s ==> genera token ==> ", yytext);
                                     agregarToken(9, yytext, yyleng);}   // Se agrega correspondiente al componente
 
-{salto}     {contador_lineas++;}
+{salto}     {contador_lineas++;}                                        // Se contabiliza el salto de linea
 
-{espacio}   {}                                                          // Se contabiliza el salto de linea
+{espacio}   {}                                                          // No se hacen cambios a la secuencia de tokens
 
-.          {fprintf(salida,"\n%s ==> Elemento no reconocido", yytext);
+{misigno}   {fprintf(salida,"\n%s ==> Elemento no reconocido", yytext);
+             fprintf(errores,"Elemento \"%s\" no reconocido en linea %i\n", yytext, contador_lineas);}
+
+.           {fprintf(salida,"\n%s ==> Elemento no reconocido", yytext);
              fprintf(errores,"Elemento \"%s\" no reconocido en linea %i\n", yytext, contador_lineas);}
 
 %%
