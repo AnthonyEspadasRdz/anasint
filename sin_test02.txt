@@ -1,0 +1,17 @@
+inteiro _fun1(flutuador _cad1, inteiro _num1) 
+{
+    inteiro _num2 = 15, _num3;
+    _num2 += _num1;
+    
+    para _num3[0,5]
+    #
+        se(_num2 <= 15)
+        #
+            _num2 += 2;
+        #
+    #
+
+    _cad1 = _cad1 & "amigos";
+
+    retorno _num2;
+}
