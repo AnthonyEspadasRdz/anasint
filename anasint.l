@@ -77,8 +77,13 @@ struct _token{
 
 LISTA* listas[10];          // Arreglo que guarda las tablas generadas
 LISTA_T* tokens_L;          // Estructura que guarda los tokens generados
+
+char* cadena;               // Guardara la cadena de atomicas para usarse en tiempo de ejecucion
+
 int contador_cadenas = 0;   // Contador auxiliar para llevar control del indice de la tabla de cadenas
 int contador_lineas = 1;    // Contador auxiliar para llevar un control del numero de lineas analizadas
+int contador_tokens = 0;    // Lleva un control de los tokens generados
+int contador_atomos = 0;    // lleva un control de los atomos generados
 
 // Prototipos de funciones
 LISTA* crearLista(int clase);
@@ -99,7 +104,7 @@ void imprimirTablas();
 void liberarMemoria();
 void vaciarLista(LISTA* lista);
 void vaciarTokens();
-void generarAtomicas();
+char* generarAtomicas();
 
 %}
 
@@ -174,27 +179,32 @@ int main()
     salida = fopen("salida.txt", "w");
     tokens = fopen("tokens.txt", "w");
     errores = fopen("errores.txt", "w");
-    atomicas = fopen("atomicas.txt", "w");
-
+    //atomicas = fopen("atomicas.txt", "w");
+    
     generarTablas();                        // Coloca tabla en estado inicial
     yylex();                                // Inicia analis lexico
+    
     imprimirTablas();                       // Guarda el estado final de las tablas
     imprimirTokens();                       // Guarda la secuencia de tokens en un archivo
+    
+    cadena = generarAtomicas();             // Crea la cadena de atomicas para el analisis sintactico
+    //fputs(cadena, atomicas);                // Se guarda en un archivo la cadena de atomicas
     
     // Cierra el flujo de datos
     fclose(salida);
     fclose(tokens);
     fclose(errores);
+    //fclose(atomicas);
     
-    generarAtomicas();                      // Crea la cadena de atomicas para el analisis sintactivvco
-    fclose(atomicas);
     // anaSint();                              // Comienza el analsis sintactico
     liberarMemoria();                       // Libera el espacio usado
 
     // Indica el termino del programa
     system("clear");
     printf("\nAnalisis terminao\n");
-    printf("El programa tiene %i lineas\n", contador_lineas);
+    printf("\nSe generaron: %i tokens\n", contador_tokens);
+    printf("\nEl programa tiene: %i lineas\n", contador_lineas);
+    printf("\nLa cadena de atomicas es: \n\t%s\n", cadena);
     return 0;
 }
 
@@ -226,6 +236,7 @@ TOKEN* crearToken(int clase, int valor)
     nuevo_token -> clase = clase;
     nuevo_token -> valor = valor;
     nuevo_token -> siguiente = NULL;
+    contador_tokens++;                                      // Se incrementa el contador de tokens
     return nuevo_token;
 }
 
@@ -591,9 +602,36 @@ void vaciarTokens()
 }
 
 // Funcion que transforma la secuencia de tokens en la cadena de atomicas
-void generarAtomicas()
+char* generarAtomicas()
 {
-    return;
+    TOKEN* auxiliar = tokens_L -> head;                                         // Nodo para recorrer la lista de tokens
+    char* cadena = NULL;                                                        // Guarda la cadena de atomicas
+    char atomo = 'a';                                                                 // Auxiliar para agregar elementos a la cadena
+
+    if (contador_tokens)                                                        // Comprobamos que exista al menos un token
+    {   
+        cadena = (char*) malloc(sizeof(char));                                  // Reservamos la memoria para el atomo
+        //atomo = encontrarEquivalencia(auxiliar -> clase, auxiliar -> valor);    // Encontramos la equivalencia del token    
+        cadena[contador_atomos] = atomo;                                        // Se agrega el elemento a la cadena
+        contador_atomos++;                                                      // Se inicia el conteo de atomos
+        auxiliar = auxiliar -> siguiente;                                       // Nos desplazamos al siguiente token
+
+        while (auxiliar != NULL)                                                // Continua hasta recorrer toda la lista
+        {
+            cadena = (char*) realloc(cadena, sizeof(char)*(contador_atomos+2)); // Ampliamos la memoria de la cadena
+            //atomo = encontrarEquivalencia(auxiliar -> clase, auxiliar -> valor);// Encontramos la equivalencia del token
+            cadena[contador_atomos] = atomo;                                    // Se agrega el elemento a la cadena
+            contador_atomos++;                                                  // Se contabiliza el atomo
+            auxiliar = auxiliar -> siguiente;                                   // Nos desplazamos al siguiente token
+        }
+        
+        cadena = (char*) realloc(cadena, sizeof(char)*(contador_atomos+2));     // Ampliamos la memoria de la cadena
+        cadena[contador_atomos] = '~';                                          // Colocamos el fin de cadena
+        contador_atomos++;                                                      // Finalizamos el conteo de atomos
+        return cadena;                                                          // Devuelve el apuntador a la cadena
+    }
+    
+    return cadena;                                                              // Se devuelve la cadena vacia
 }
 
 // Realiza el analisis sintactico descendente recursivo de la cadena de atomicas
