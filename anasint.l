@@ -105,6 +105,7 @@ void liberarMemoria();
 void vaciarLista(LISTA* lista);
 void vaciarTokens();
 char* generarAtomicas();
+char encontrarEquivalencia(int clase, int valor);
 
 %}
 
@@ -179,7 +180,7 @@ int main()
     salida = fopen("salida.txt", "w");
     tokens = fopen("tokens.txt", "w");
     errores = fopen("errores.txt", "w");
-    //atomicas = fopen("atomicas.txt", "w");
+    atomicas = fopen("atomicas.txt", "w");
     
     generarTablas();                        // Coloca tabla en estado inicial
     yylex();                                // Inicia analis lexico
@@ -188,13 +189,13 @@ int main()
     imprimirTokens();                       // Guarda la secuencia de tokens en un archivo
     
     cadena = generarAtomicas();             // Crea la cadena de atomicas para el analisis sintactico
-    //fputs(cadena, atomicas);                // Se guarda en un archivo la cadena de atomicas
+    fputs(cadena, atomicas);                // Se guarda en un archivo la cadena de atomicas
     
     // Cierra el flujo de datos
     fclose(salida);
     fclose(tokens);
     fclose(errores);
-    //fclose(atomicas);
+    fclose(atomicas);
     
     // anaSint();                              // Comienza el analsis sintactico
     liberarMemoria();                       // Libera el espacio usado
@@ -606,12 +607,12 @@ char* generarAtomicas()
 {
     TOKEN* auxiliar = tokens_L -> head;                                         // Nodo para recorrer la lista de tokens
     char* cadena = NULL;                                                        // Guarda la cadena de atomicas
-    char atomo = 'a';                                                                 // Auxiliar para agregar elementos a la cadena
+    char atomo='a';                                                                 // Auxiliar para agregar elementos a la cadena
 
     if (contador_tokens)                                                        // Comprobamos que exista al menos un token
     {   
-        cadena = (char*) malloc(sizeof(char));                                  // Reservamos la memoria para el atomo
-        //atomo = encontrarEquivalencia(auxiliar -> clase, auxiliar -> valor);    // Encontramos la equivalencia del token    
+        cadena = (char*) malloc(sizeof(char)*2);                                  // Reservamos la memoria para el atomo
+        atomo = encontrarEquivalencia(auxiliar -> clase, auxiliar -> valor);    // Encontramos la equivalencia del token    
         cadena[contador_atomos] = atomo;                                        // Se agrega el elemento a la cadena
         contador_atomos++;                                                      // Se inicia el conteo de atomos
         auxiliar = auxiliar -> siguiente;                                       // Nos desplazamos al siguiente token
@@ -619,7 +620,7 @@ char* generarAtomicas()
         while (auxiliar != NULL)                                                // Continua hasta recorrer toda la lista
         {
             cadena = (char*) realloc(cadena, sizeof(char)*(contador_atomos+2)); // Ampliamos la memoria de la cadena
-            //atomo = encontrarEquivalencia(auxiliar -> clase, auxiliar -> valor);// Encontramos la equivalencia del token
+            atomo = encontrarEquivalencia(auxiliar -> clase, auxiliar -> valor);// Encontramos la equivalencia del token
             cadena[contador_atomos] = atomo;                                    // Se agrega el elemento a la cadena
             contador_atomos++;                                                  // Se contabiliza el atomo
             auxiliar = auxiliar -> siguiente;                                   // Nos desplazamos al siguiente token
@@ -628,10 +629,74 @@ char* generarAtomicas()
         cadena = (char*) realloc(cadena, sizeof(char)*(contador_atomos+2));     // Ampliamos la memoria de la cadena
         cadena[contador_atomos] = '~';                                          // Colocamos el fin de cadena
         contador_atomos++;                                                      // Finalizamos el conteo de atomos
+        cadena[contador_atomos] = '\0';                                         // Colocamos el fin de cadena
         return cadena;                                                          // Devuelve el apuntador a la cadena
     }
     
     return cadena;                                                              // Se devuelve la cadena vacia
+}
+
+// Identifica el equivalente atomico del token leido
+char encontrarEquivalencia(int clase, int valor)
+{
+    char c;         // Caracter de apoyo para almacenar valor
+
+    switch(clase)   // El tipo de atomica depende del tipo de componente
+    {
+        case 0:     
+        case 6:
+            c = valor;
+            break;
+        case 3:
+            c = 'n';
+            break;
+        case 5:
+            c = 'a';
+            break;
+        case 8:
+            c = 'v';
+            break;
+        case 1:
+            if (valor == 0) c = 'h';
+            if (valor == 1) c = 'j';
+            if (valor == 2) c = '!';
+            break;
+        case 2:
+            if (valor == 0) c = 'e';
+            if (valor == 1) c = 'd';
+            if (valor == 2) c = '>';
+            if (valor == 3) c = '<';
+            if (valor == 4) c = 'm';
+            if (valor == 5) c = 'w';
+            break;
+        case 4:
+            if (valor == 0) c = 'g';
+            if (valor == 1) c = 'c';
+            if (valor == 2) c = 'q';
+            if (valor == 3) c = 'z';
+            if (valor == 4) c = 'f';
+            if (valor == 5) c = 'i';
+            if (valor == 6) c = 'p';
+            if (valor == 7) c = 'u';
+            if (valor == 8) c = 't';
+            if (valor == 9) c = 's';
+            if (valor == 10) c = 'b';
+            break;
+        case 7:
+            if (valor == 0) c = '=';
+            if (valor == 1) c = 'x';
+            if (valor == 2) c = 'y';
+            if (valor == 3) c = 'k';
+            if (valor == 4) c = 'r';
+            if (valor == 5) c = 'o';
+            break;
+        case 9:
+            if (valor == 0) c = '&';
+            if (valor == 1) c = 'l';
+            break;      
+    }
+
+    return c;       // Devolvemos el caracter correspondiente
 }
 
 // Realiza el analisis sintactico descendente recursivo de la cadena de atomicas
