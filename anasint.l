@@ -110,48 +110,49 @@ char encontrarEquivalencia(int clase, int valor);
 
 // Prototipo de las funciones NT
 void anaSint();
-void NT_<Program>();
-void NT_<Func>();
-void NT_<otraFunc>();
-void NT_<TipoF>();
-void NT_<listaArg>();
-void NT_<otroArg>();
-void NT_<Cuerpo>();
-void NT_<listaDecl>();
-void NT_<Decl>();
-void NT_<Tipo>();
-void NT_<valorIni>();
-void NT_<listaVar>();
-void NT_<tipoVal>();
-void NT_<Asig>();
-void NT_<opArit>();
-void NT_<E>();
-void NT_<Ep>();
-void NT_<T>();
-void NT_<Tp>();
-void NT_<F>();
-void NT_<R>();
-void NT_<opRel>();
-void NT_<Sent>();
-void NT_<listaS>();
-void NT_<expLogica>();
-void NT_<expLog>();
-void NT_<expRel>();
-void NT_<opLog>();
-void NT_<Enq>();
-void NT_<Se>();
-void NT_<Q>();
-void NT_<Faz>();
-void NT_<Ret>();
-void NT_<valRet>();
-void NT_<expCad>();
-void NT_<opCad>();
-void NT_<Para>();
-void NT_<Trocar>();
-void NT_<casos>();
-void NT_<Llama>();
-void NT_<listP>();
-void NT_<Param>();
+void NT_Program();
+void NT_Func();
+void NT_otraFunc();
+void NT_TipoF();
+void NT_listArg();
+void NT_otroArg();
+void NT_Cuerpo();
+void NT_listaDecl();
+void NT_Decl();
+void NT_Tipo();
+void NT_valorIni();
+void NT_listaVal();
+void NT_tipoVal();
+void NT_Asig();
+void NT_opArit();
+void NT_E();
+void NT_Ep();
+void NT_T();
+void NT_Tp();
+void NT_F();
+void NT_R();
+void NT_opRel();
+void NT_Sent();
+void NT_listaS();
+void NT_expLogica();
+void NT_expLog();
+void NT_expRel();
+void NT_opLog();
+void NT_Enq();
+void NT_Se();
+void NT_Q();
+void NT_Faz();
+void NT_Ret();
+void NT_valRet();
+void NT_expCad();
+void NT_opCad();
+void NT_Para();
+void NT_Trocar();
+void NT_casos();
+void NT_Llama();
+void NT_listP();
+void NT_Param();
+void NT_error();
 
 %}
 
@@ -243,7 +244,7 @@ int main()
     fclose(errores);
     fclose(atomicas);
     
-    //anaSint();                                                                      // Comienza el analsis sintactico
+    anaSint();                                                                      // Comienza el analsis sintactico
     liberarMemoria();                                                               // Libera el espacio usado
 
     // Indica el termino del programa
@@ -748,9 +749,9 @@ char encontrarEquivalencia(int clase, int valor)
 }
 
 // -- Realiza el analisis sintactico descendente recursivo de la cadena de atomicas
-void AnaSint()
+void anaSint()
 {
-    NT_<Program>();                                                                 // Evalua usando el simbolo inical
+    NT_Program();                                                                 // Evalua usando el simbolo inical
     
     // Al volver, el programa es correcto si apunta al fin de cadena
     if (cadena[posicion] == '~')
@@ -761,214 +762,275 @@ void AnaSint()
 
 // -- Funciones de NT para analisis de la cadena
 
-void NT_<Program>()
+void NT_Program()
 {
+    // Comparamos el caracter apuntado con el conjunto de seleccion
+    if (cadena[posicion] == 'f' || cadena[posicion] == 'i' || cadena[posicion] == 'g')
+    {
+        NT_Func();    // Verifica la funcion inical del programa
+        NT_otraFunc(); // Verifica si hay mas funciones declaradas
+    }
+    else
+    {
+        NT_error();
+    }
 
+    return; // Terminamos con el analisis del simbolo inicial
 }
 
-void NT_<Func>()
+void NT_Func()
 {
+    // Comparamos el caracter apuntado con el conjunto de seleccion
+    if (cadena[posicion] == 'f' || cadena[posicion] == 'i' || cadena[posicion] == 'g')
+    {
+        NT_TipoF(); // Se verifica el tipo de la funcion
 
+        // Corroboramos que la cadena apunte a un identificador
+        if (cadena[posicion] == 'a')
+            posicion++; // Avanzamos la cadena
+        else
+            NT_error();
+
+        // Corroboramos que al identifcador le siga la apertura de parentesis
+        if (cadena[posicion] == '(')
+            posicion++; // Avanzamos la cadena
+        else
+            NT_error();
+        
+        NT_listArg(); // Se verifica la lista de argumentos de la funcion
+
+        // Corroboramos que la lista de argumentos cierre parentesis
+        if (cadena[posicion] == ')')
+            posicion++; // Avanzamos la cadena
+        else
+            NT_error();
+
+        // Corroboramos que el cuerpo de la funcion inicia con llave
+        if (cadena[posicion] == '{')
+            posicion++; // Avanzamos la cadena
+        else
+            NT_error();
+
+        NT_Cuerpo(); // Verificamos el cuerpo de la funcion
+        
+        // Corroboramos que el cuerpo de la funcion cierra con llave
+        if (cadena[posicion] == '}')
+            posicion++; // Avanzamos la cadena
+        else
+            NT_error();
+        
+        return; // Terminamos la validacion del NT
+    }
+    else
+    {
+        NT_error();
+    }
 }
 
-void NT_<otraFunc>()
+void NT_otraFunc()
 {
-
+    return;
 }
 
-void NT_<TipoF>()
+void NT_TipoF()
 {
-
+    return;
 }
 
-void NT_<listaArg>()
+void NT_listArg()
 {
-
+    return;
 }
 
-void NT_<otroArg>()
+void NT_otroArg()
 {
-
+    return;
 }
 
-void NT_<Cuerpo>()
+void NT_Cuerpo()
 {
-
+    return;
 }
 
-void NT_<listaDecl>()
+void NT_listaDecl()
 {
-
+    return;
 }
 
-void NT_<Decl>()
+void NT_Decl()
 {
-
-}
-
-
-void NT_<Tipo>()
-{
-
+    return;
 }
 
 
-void NT_<valorIni>()
+void NT_Tipo()
 {
-
+    return;
 }
 
-void NT_<listaVar>()
-{
 
+void NT_valorIni()
+{
+    return;
 }
 
-void NT_<tipoVal>()
+void NT_listaVar()
 {
-
+    return;
 }
 
-void NT_<Asig>()
+void NT_tipoVal()
 {
-
+    return;
 }
 
-void NT_<opArit>()
+void NT_Asig()
 {
-
+    return;
 }
 
-void NT_<E>()
+void NT_opArit()
 {
-
+    return;
 }
 
-void NT_<Ep>()
+void NT_E()
 {
-
+    return;
 }
 
-void NT_<T>()
+void NT_Ep()
 {
-
+    return;
 }
 
-void NT_<Tp>()
+void NT_T()
 {
-
+    return;
 }
 
-void NT_<F>()
+void NT_Tp()
 {
-
+    return;
 }
 
-void NT_<R>()
+void NT_F()
 {
-
+    return;
 }
 
-void NT_<opRel>()
+void NT_R()
 {
-
+    return;
 }
 
-void NT_<Sent>()
+void NT_opRel()
 {
-
+    return;
 }
 
-void NT_<listaS>()
+void NT_Sent()
 {
-
+    return;
 }
 
-void NT_<expLogica>()
+void NT_listaS()
 {
-
+    return;
 }
 
-void NT_<expLog>()
+void NT_expLogica()
 {
-
+    return;
 }
 
-void NT_<expRel>()
+void NT_expLog()
 {
-
+    return;
 }
 
-void NT_<opLog>()
+void NT_expRel()
 {
-
+    return;
 }
 
-void NT_<Enq>()
+void NT_opLog()
 {
-
+    return;
 }
 
-void NT_<Se>()
+void NT_Enq()
 {
-
+    return;
 }
 
-void NT_<Q>()
+void NT_Se()
 {
-
+    return;
 }
 
-void NT_<Faz>()
+void NT_Q()
 {
-
+    return;
 }
 
-void NT_<Ret>()
+void NT_Faz()
 {
-
+    return;
 }
 
-void NT_<valRet>()
+void NT_Ret()
 {
-
+    return;
 }
 
-void NT_<expCad>()
+void NT_valRet()
 {
-
+    return;
 }
 
-void NT_<opCad>()
+void NT_expCad()
 {
-
+    return;
 }
 
-void NT_<Para>()
+void NT_opCad()
 {
-
+    return;
 }
 
-void NT_<Trocar>()
+void NT_Para()
 {
-
+    return;
 }
 
-void NT_<casos>()
+void NT_Trocar()
 {
-
+    return;
 }
 
-void NT_<Llama>()
+void NT_casos()
 {
-
+    return;
 }
 
-void NT_<listP>()
+void NT_Llama()
 {
-
+    return;
 }
 
-void NT_<Param>()
+void NT_listP()
 {
+    return;
+}
 
+void NT_Param()
+{
+    return;
+}
+
+void NT_error()
+{
+    printf("\nError en el atomo %i de la cadena\n", posicion);
+    return;
 }
