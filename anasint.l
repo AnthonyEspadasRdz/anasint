@@ -243,9 +243,6 @@ int main()
     fclose(tokens);
     fclose(errores);
     fclose(atomicas);
-    
-    anaSint();                                                                      // Comienza el analsis sintactico
-    liberarMemoria();                                                               // Libera el espacio usado
 
     // Indica el termino del programa
     system("clear");
@@ -253,6 +250,9 @@ int main()
     printf("\nSe generaron: %i tokens\n", contador_tokens);
     printf("\nEl programa tiene: %i lineas\n", contador_lineas);
     printf("\nLa cadena de atomicas es: \n\t%s\n", cadena);
+    
+    anaSint();                                                                      // Comienza el analsis sintactico
+    liberarMemoria();                                                               // Libera el espacio usado
     return 0;
 }
 
@@ -750,14 +750,16 @@ char encontrarEquivalencia(int clase, int valor)
 
 // -- Realiza el analisis sintactico descendente recursivo de la cadena de atomicas
 void anaSint()
-{
-    NT_Program();                                                                 // Evalua usando el simbolo inical
+{   
+    NT_Program();                                                                   // Evalua usando el simbolo inical
     
     // Al volver, el programa es correcto si apunta al fin de cadena
     if (cadena[posicion] == '~')
         printf("\nEl programa fuente es sintacticamente correcto\n");
     else
         printf("\nEl programa fuente no es sintacticamente correcto\n");
+
+    return;                                                                         // Regresa a la ejecucion principal
 }
 
 // -- Funciones de NT para analisis de la cadena
@@ -767,15 +769,15 @@ void NT_Program()
     // Comparamos el caracter apuntado con el conjunto de seleccion
     if (cadena[posicion] == 'f' || cadena[posicion] == 'i' || cadena[posicion] == 'g')
     {
-        NT_Func();    // Verifica la funcion inical del programa
-        NT_otraFunc(); // Verifica si hay mas funciones declaradas
+        NT_Func();                                                                  // Verifica la funcion inical del programa
+        NT_otraFunc();                                                              // Verifica si hay mas funciones declaradas
     }
     else
     {
         NT_error();
     }
 
-    return; // Terminamos con el analisis del simbolo inicial
+    return;                                                                         // Terminamos con el analisis del simbolo inicial
 }
 
 void NT_Func()
@@ -783,43 +785,43 @@ void NT_Func()
     // Comparamos el caracter apuntado con el conjunto de seleccion
     if (cadena[posicion] == 'f' || cadena[posicion] == 'i' || cadena[posicion] == 'g')
     {
-        NT_TipoF(); // Se verifica el tipo de la funcion
+        NT_TipoF();                                                                 // Se verifica el tipo de la funcion
 
         // Corroboramos que la cadena apunte a un identificador
         if (cadena[posicion] == 'a')
-            posicion++; // Avanzamos la cadena
+            posicion++;                                                             // Avanzamos la cadena
         else
             NT_error();
 
         // Corroboramos que al identifcador le siga la apertura de parentesis
         if (cadena[posicion] == '(')
-            posicion++; // Avanzamos la cadena
+            posicion++;                                                             // Avanzamos la cadena
         else
             NT_error();
         
-        NT_listArg(); // Se verifica la lista de argumentos de la funcion
+        NT_listArg();                                                               // Se verifica la lista de argumentos de la funcion
 
         // Corroboramos que la lista de argumentos cierre parentesis
         if (cadena[posicion] == ')')
-            posicion++; // Avanzamos la cadena
+            posicion++;                                                             // Avanzamos la cadena
         else
             NT_error();
 
         // Corroboramos que el cuerpo de la funcion inicia con llave
         if (cadena[posicion] == '{')
-            posicion++; // Avanzamos la cadena
+            posicion++;                                                             // Avanzamos la cadena
         else
             NT_error();
 
-        NT_Cuerpo(); // Verificamos el cuerpo de la funcion
+        NT_Cuerpo();                                                                // Verificamos el cuerpo de la funcion
         
         // Corroboramos que el cuerpo de la funcion cierra con llave
         if (cadena[posicion] == '}')
-            posicion++; // Avanzamos la cadena
+            posicion++;                                                             // Avanzamos la cadena
         else
             NT_error();
         
-        return; // Terminamos la validacion del NT
+        return;                                                                     // Terminamos la validacion del NT
     }
     else
     {
