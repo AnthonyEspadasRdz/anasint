@@ -248,10 +248,7 @@ int main()
     // Indica el termino del programa
     system("clear");
     printf("\nAnalisis terminao\n");
-    printf("\nSe generaron: %i tokens\n", contador_tokens);
-    printf("\nEl programa tiene: %i lineas\n", contador_lineas);
-    printf("\nLa cadena de atomicas es: \n\t%s\n", cadena);
-    
+    printf("\nLa cadena de atomicas es: \n\t%s\n", cadena);                         // Muestra la cadena en consola
     anaSint();                                                                      // Comienza el analsis sintactico
     liberarMemoria();                                                               // Libera el espacio usado
     return 0;
@@ -2018,7 +2015,8 @@ void NT_Param()
 
 void NT_error()
 {
-    printf("\nError en el atomo %c en la posicon %i de la cadena\n", cadena[posicion], posicion);     // Se informa el error en el atomo
+    printf("\nError en el atomo %c ", cadena[posicion]);                            // Se informa el error en el atomo
+    printf("en la posicon %i de la cadena\n", posicion);                            // Se informa de la posicion del error
     correcta = 0;                                                                   // Se marca la cadena como incorrecta
     return;
 }

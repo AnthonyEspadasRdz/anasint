@@ -1,0 +1,31 @@
+assinado _main()
+{
+    flutuador _cadena="Papiyo", _cad="Richicum27";
+    inteiro _x = 56, _y =(-12), _control=1, _kilo;
+    
+    _num1 = _control+37*(12-(+93));
+    _num2 = (-285);
+
+    _x = [_dobleonada(_x)];
+
+    fazer
+    #
+    _num1 -= _num2;
+    # enquanto (_num1 != 0);
+
+    para _kilo [1,6]
+    #
+        _control += 1;
+
+        se(_control == _y)
+        #
+            quebrar;
+        #
+    #
+}
+
+inteiro _dobleonada(inteiro _duplicante)
+{
+    _duplicante *= 2;
+    retorno _duplicante;
+}
