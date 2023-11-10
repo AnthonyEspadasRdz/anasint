@@ -78,14 +78,15 @@ struct _token{
 LISTA* listas[10];                                                                  // Arreglo que guarda las tablas generadas
 LISTA_T* tokens_L;                                                                  // Estructura que guarda los tokens generados
 
-char* cadena;                                                                       // Guardara la cadena de atomicas para usarse en tiempo de ejecucion
-
 int contador_cadenas = 0;                                                           // Contador auxiliar para llevar control del indice de la tabla de cadenas
 int contador_lineas = 1;                                                            // Contador auxiliar para llevar un control del numero de lineas analizadas
 int contador_tokens = 0;                                                            // Lleva un control de los tokens generados
 int contador_atomos = 0;                                                            // lleva un control de los atomos generados
 int posicion = 0;                                                                   // Recorre la cadena de atomos en el analsis sintactico
 int correcta = 1;                                                                   // Mientras no encuentre un error, la cadena se considera correcta
+
+char* cadena;                                                                       // Guardara la cadena de atomicas para usarse en tiempo de ejecucion
+int* lineas;                                                                        // Guarda la cantidad de tokens por linea
 
 // Prototipos de funciones
 LISTA* crearLista(int clase);
@@ -108,6 +109,7 @@ void vaciarLista(LISTA* lista);
 void vaciarTokens();
 char* generarAtomicas();
 char encontrarEquivalencia(int clase, int valor);
+int encontrarLinea(int posicion);
 
 // Prototipo de las funciones NT
 void anaSint();
@@ -206,7 +208,11 @@ misigno ({let}|{dig})+
 {opcad}     {fprintf(salida,"\n%s ==> genera token ==> ", yytext);
                                     agregarToken(9, yytext, yyleng);}               // Se agrega correspondiente al componente
 
-{salto}     {contador_lineas++;}                                                    // Se contabiliza el salto de linea
+{salto}     {lineas[contador_lineas-1] = contador_tokens;                           // Se registran los tokens en la linea
+             if (lineas[contador_lineas-2] == lineas[contador_lineas-1])            // Cuando la linea esta vacio
+                lineas[contador_lineas-2] = 0;                                      // Se borra el valor de la menor
+             contador_lineas++;                                                     // Se contabiliza el salto de linea
+             lineas = (int*) realloc(lineas, sizeof(int)*contador_lineas);}         // Se reserva espacio para la nueva entrada                                           
 
 {espacio}   {}                                                                      // No se hacen cambios a la secuencia de tokens
 
@@ -383,6 +389,8 @@ void agregarEntrada(LISTA* lista, char* cad)
 // -- Coloca todas las tablas en su estado inicial
 void generarTablas()
 {
+    lineas = (int *) malloc(sizeof(int));
+    
     // Reserva la memoria para cada lista
     for(int i = 0; i < 10; i++)
     {
@@ -611,6 +619,8 @@ void liberarMemoria()
     }
 
     vaciarTokens();                                                                 // Libera el espacio de los tokens
+    free(cadena);                                                                   // Libera el espacio reservado para la cadena de atomos
+    free(lineas);                                                                   // Libera el espacio reservado para el conteo de lineas
 }
 
 // Elimina todos los nodos de una lista
@@ -744,6 +754,16 @@ char encontrarEquivalencia(int clase, int valor)
     }
 
     return c;                                                                       // Devolvemos el caracter correspondiente
+}
+
+// -- Encuentra la linea de la atomica que tuvo el error
+int encontrarLinea(int posicion)
+{
+    for(int i = 0; i < contador_lineas; i++)                                        // Buscamos la entrada a la que sea mayor
+    {
+        if(lineas[i] >= posicion)
+            return i+1;                                                             // Regresa la linea de la atomica
+    }
 }
 
 // -- Realiza el analisis sintactico descendente recursivo de la cadena de atomicas
@@ -2015,8 +2035,8 @@ void NT_Param()
 
 void NT_error()
 {
-    printf("\nError en el atomo %c ", cadena[posicion]);                            // Se informa el error en el atomo
-    printf("en la posicon %i de la cadena\n", posicion);                            // Se informa de la posicion del error
+    printf("\nError despues del atomo %c ", cadena[posicion-1]);                    // Se informa el error en el atomo
+    printf("en la linea %i\n", encontrarLinea(posicion));                           // Se informa de la posicion del error
     correcta = 0;                                                                   // Se marca la cadena como incorrecta
     return;
 }
