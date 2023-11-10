@@ -85,6 +85,7 @@ int contador_lineas = 1;                                                        
 int contador_tokens = 0;                                                            // Lleva un control de los tokens generados
 int contador_atomos = 0;                                                            // lleva un control de los atomos generados
 int posicion = 0;                                                                   // Recorre la cadena de atomos en el analsis sintactico
+int correcta = 1;                                                                   // Mientras no encuentre un error, la cadena se considera correcta
 
 // Prototipos de funciones
 LISTA* crearLista(int clase);
@@ -121,7 +122,7 @@ void NT_listaDecl();
 void NT_Decl();
 void NT_Tipo();
 void NT_valorIni();
-void NT_listaVal();
+void NT_listaVar();
 void NT_tipoVal();
 void NT_Asig();
 void NT_opArit();
@@ -649,7 +650,7 @@ void vaciarTokens()
     tokens_L -> tail = NULL;
 }
 
-/************************* Funciones dedicas al analizador sintactico ***************************************************************/
+/**************************************************** Funciones dedicas al analizador sintactico *************************************************/
 
 // -- Funcion que transforma la secuencia de tokens en la cadena de atomicas
 char* generarAtomicas()
@@ -754,7 +755,7 @@ void anaSint()
     NT_Program();                                                                   // Evalua usando el simbolo inical
     
     // Al volver, el programa es correcto si apunta al fin de cadena
-    if (cadena[posicion] == '~')
+    if (cadena[posicion] == '~' && correcta)
         printf("\nEl programa fuente es sintacticamente correcto\n");
     else
         printf("\nEl programa fuente no es sintacticamente correcto\n");
@@ -831,208 +832,1193 @@ void NT_Func()
 
 void NT_otraFunc()
 {
+    // Caso en el que se encuentra otra funcion
+    if(cadena[posicion] == 'f' || cadena[posicion] == 'i' || cadena[posicion] == 'g')
+    {
+        NT_Func();                                                                  // Se revisa la estructura de la funcion
+        NT_otraFunc();                                                              // Verificamos si hay otra funcion por revisar
+        return;                                                                     // Termina de revisar funciones
+    }
+    // Caso en el que ya no se tienen mas funciones
+    else if (cadena[posicion] == '~')
+    {
+        return;                                                                     // Al llegar al fin de cadena deja de buscar funciones
+    }
+    else
+    {
+        NT_error();
+    }
+
     return;
 }
 
 void NT_TipoF()
 {
+    // Caso en el que el tipo es inteiro o flutuador
+    if(cadena[posicion] == 'f' || cadena[posicion] == 'i')
+    {
+        NT_Tipo();                                                                  // Funcion para la comprobacion del tipo
+        return;
+    }
+    // Caso en el que el tipo es assinado
+    else if(cadena[posicion] == 'g')
+    {
+        posicion++;                                                                 // Se desplaza la cadena
+        return;                                                                     // Regresamos de la comprobacion de tipo
+    }
+    else
+    {
+        NT_error();
+    }
+
     return;
 }
 
 void NT_listArg()
 {
+    // Caso para el que se sabe que hay al menos otro argumento
+    if(cadena[posicion] == 'f' || cadena[posicion] == 'i')
+    {
+        NT_Tipo();                                                                 // Valida que el tipo del argumento sea valido
+
+        // Validamos que tras el tipo haya un identificador
+        if (cadena[posicion] == 'a')
+            posicion++;                                                             // Se avanza la cadena
+        else
+            NT_error();
+
+        NT_otroArg();                                                               // Verifica si se tiene otro argumento
+    }
+    // Comprobacion para cuando ya no hay mas argumentos
+    else if (cadena[posicion] == ')')
+    {
+        return;                                                                     // Se finaliza con la revision de la lista
+    }
+    else
+    {
+        NT_error();
+    }
+    
     return;
 }
 
 void NT_otroArg()
 {
+    // Caso en el que aun hay al menos un argumento por leer
+    if(cadena[posicion] == ',')
+    {
+        if(cadena[posicion] == ',')
+            posicion++;                                                             // Se registra la coma y se valida el resto del argumento
+    
+        NT_Tipo();                                                                  // Se valida el tipo del argumento
+
+        // Validamos que tras el tipo haya un identificador
+        if (cadena[posicion] == 'a')
+            posicion++;                                                             // Se avanza la cadena
+        else
+            NT_error();
+
+        NT_otroArg();                                                               // Verifica si se tiene otro argumento
+    }
+    // Caso en el que ya no hay mas argumentos
+    else if (cadena[posicion] == ')')
+    {
+        return;                                                                     // Terminamos con la revision de argumentos
+    }
+    else
+    {
+        NT_error();
+    }
+
     return;
 }
 
 void NT_Cuerpo()
 {
+    // Validamos que el inicio del cuerpo sea valido   
+    if (cadena[posicion] == 'f' || cadena[posicion] == 'i' || cadena[posicion] == 'a' ||
+        cadena[posicion] == 'u' || cadena[posicion] == 't' || cadena[posicion] == 'b' ||
+        cadena[posicion] == 'q' || cadena[posicion] == 'z' || cadena[posicion] == 's' ||
+        cadena[posicion] == 'p' || cadena[posicion] == '[' || cadena[posicion] == '}')
+    {
+        NT_listaDecl();                                                             //Se revisan las declaraciones
+        NT_listaS();                                                                // Se revisan las sentencias
+    }
+    else
+    {
+        NT_error();
+    }
     return;
 }
 
 void NT_listaDecl()
 {
+    // Caso en que hay declaraciones de varibles en el cuerpo
+    if(cadena[posicion] == 'f' || cadena[posicion] == 'i')
+    {
+        NT_Decl();                                                                  // Se revisa la declaracion de variable
+        NT_listaDecl();                                                             // Comprueba si hay más variables por revisar
+    }
+    // Caso en que no hay declaraciones en el cuerpo
+    else if (cadena[posicion] == 'a' || cadena[posicion] == 'u' || cadena[posicion] == 't' || 
+             cadena[posicion] == 'b' || cadena[posicion] == 'q' || cadena[posicion] == 'z' ||
+             cadena[posicion] == 's' || cadena[posicion] == 'p' || cadena[posicion] == '[' ||
+             cadena[posicion] == '}')
+    {
+        return;                                                                     // Se pasa a la revision de las sentencias
+    }
+    else
+    {
+        NT_error();    
+    }
     return;
 }
 
 void NT_Decl()
 {
+    // Se corrobora el tipo de las variables declaradas
+    if (cadena[posicion] == 'f' || cadena[posicion] == 'i')
+    {
+        NT_Tipo();                                                                  // Se verifica el tipo 
+    
+        // Validamos que tras el tipo haya un identificador
+        if (cadena[posicion] == 'a')
+            posicion++;                                                             // Se avanza en la cadena
+        else
+            NT_error();
+
+        NT_valorIni();                                                              // Tomamos el valor inicial de la variable, de haberlo
+        NT_listaVar();                                                              // Revisamos si hay mas variables de ese tipo declaradas
+    
+        // Validamos que la declaracion termine en ;
+        if (cadena[posicion] == ';')
+            posicion++;                                                             // Se avanza en la cadena
+        else
+            NT_error();
+    }
+    else
+    {
+        NT_error();
+    }
     return;
 }
 
 
 void NT_Tipo()
 {
+    // Solo acepta fluturador e inteiro
+    if (cadena[posicion] == 'f' || cadena[posicion] == 'i')
+    {
+        posicion++;                                                                 // Se valida el tipo
+        return;                                                                     // Se continua el analisis
+    }
+    else
+    {
+        NT_error();
+    }
+    
     return;
 }
 
 
 void NT_valorIni()
 {
+    // Caso en el que se inicializa la variable
+    if (cadena[posicion] == '=')
+    {
+        posicion++;                                                                 // Pasamos al siguiente elemento
+        NT_tipoVal();                                                               // Se corrobora el tipo de la asignacion
+        return;
+    }
+    // Caso en que no se le asigna un valor
+    else if (cadena[posicion] == ',' || cadena[posicion] == ';')
+    {
+        return;                                                                     // Se concluye la asignacion del valor
+    }
+    else
+    {
+        NT_error();
+    }
+    
     return;
 }
 
 void NT_listaVar()
 {
+    // Caso en el que aun hay variables por leer
+    if(cadena[posicion] == ',')
+    {
+        posicion++;                                                                 // Avanzamos en la cadena
+
+        // Validamos que tras la coma haya un identificador
+        if (cadena[posicion] == 'a')
+            posicion++;                                                             // Se avanza la cadena
+        else
+            NT_error();
+
+        NT_valorIni();                                                              // Varificamos si hay valor para iniciar la variable
+        NT_listaVar();                                                              // Verificamos si hay mas variables por agregar
+    }
+    // Caso en que ya no hay variables en la lista
+    else if (cadena[posicion] == ';')
+    {
+        return;                                                                     // Se pasa a la revision de las sentencias
+    }
+    else
+    {
+        NT_error();
+    }
     return;
 }
 
 void NT_tipoVal()
 {
+    // Solo acepta numeros y cadenas
+    if(cadena[posicion] == 'n' || cadena[posicion] == 'v')
+    {
+        posicion++;                                                                 // Se valida el tipo del valor asignado
+        return;                                                                     // Se continua con la lista de variable
+    }
+    else
+    {
+        NT_error();
+    }
     return;
 }
 
 void NT_Asig()
 {
+    // Verifcica que se inicia con un identificador
+    if (cadena[posicion] == 'a')
+    {
+        posicion++;                                                                 //Avanzamos la cadena
+
+        NT_opArit();                                                                // Se corrobora la operacion de asignacion
+        NT_E();                                                                     // Se valida la expresion aritmética de asignacion
+    
+        // Validamos que la asignacion termine en ;
+        if (cadena[posicion] == ';')
+            posicion++;                                                             // Se avanza en la cadena
+        else
+            NT_error();
+
+        return;                                                                     // Continua con la revision de sentencias
+    }
+    else
+    {
+        NT_error();
+    }
     return;
 }
 
 void NT_opArit()
 {
+    // Verificamos que el operador aritmetico sea valido
+    if (cadena[posicion] == '=' || cadena[posicion] == 'x' || cadena[posicion] == 'y' ||
+        cadena[posicion] == 'k' || cadena[posicion] == 'r' || cadena[posicion] == 'o')
+        posicion++;                                                                 // Avanza en la cadena
+    else
+        NT_error();
+    
     return;
 }
 
 void NT_E()
 {
+    if (cadena[posicion] == '(' || cadena[posicion] == 'a' || cadena[posicion] == 'n' ||
+        cadena[posicion] == '[')
+    {
+        NT_T();
+        NT_Ep();
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
     return;
 }
 
 void NT_Ep()
 {
+    if (cadena[posicion] == '+' || cadena[posicion] == '-')
+    {
+        posicion++;
+        NT_T();
+        NT_Ep();
+        return;
+    }
+    else if (cadena[posicion] == ';' || cadena[posicion] == ')' || cadena[posicion] == '>' ||
+             cadena[posicion] == '<' || cadena[posicion] == 'e' || cadena[posicion] == 'd' ||
+             cadena[posicion] == 'm' || cadena[posicion] == 'w' || cadena[posicion] == 'h' ||
+             cadena[posicion] == 'j' || cadena[posicion] == ',')
+    {
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
     return;
 }
 
 void NT_T()
 {
+    if (cadena[posicion] == '(' || cadena[posicion] == 'a' || cadena[posicion] == 'n' ||
+        cadena[posicion] == '[')
+    {
+        NT_F();
+        NT_Tp();
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
     return;
 }
 
 void NT_Tp()
 {
+    if (cadena[posicion] == '*' || cadena[posicion] == '/' || cadena[posicion] == '%')
+    {
+        posicion++;
+        NT_F();
+        NT_Tp();
+        return;
+    }
+    else if (cadena[posicion] == ';' || cadena[posicion] == ')' || cadena[posicion] == '>' ||
+             cadena[posicion] == '<' || cadena[posicion] == 'e' || cadena[posicion] == 'd' ||
+             cadena[posicion] == 'm' || cadena[posicion] == 'w' || cadena[posicion] == 'h' ||
+             cadena[posicion] == 'j' || cadena[posicion] == ',' || cadena[posicion] == '+' ||
+             cadena[posicion] == '-')
+    {
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
     return;
 }
 
 void NT_F()
 {
+    if(cadena[posicion] == 'a' || cadena[posicion] == 'n')
+    {
+        posicion++;
+        return;
+    }
+    else if(cadena[posicion] == '(')
+    {
+        posicion++;
+        NT_E();
+
+        // Validamos que la produccion termine en )
+        if (cadena[posicion] == ')')
+            posicion++;                                                             // Se avanza en la cadena
+        else
+            NT_error();
+
+        return;        
+    }
+    else if(cadena[posicion] == '[')
+    {
+        NT_Llama();                                                                 // Obtiene el valor como resultado de una funcion
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
     return;
 }
 
 void NT_R()
 {
+    if (cadena[posicion] == '(' || cadena[posicion] == 'a' || cadena[posicion] == 'n' ||
+        cadena[posicion] == '[')
+    {
+        NT_E();
+        NT_opRel();
+        NT_E();
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
+    
     return;
 }
 
 void NT_opRel()
 {
+    // Corroboramos que el operador relacional sea valido
+    if (cadena[posicion] == '>' || cadena[posicion] == '<' || cadena[posicion] == 'e' ||
+        cadena[posicion] == 'd' || cadena[posicion] == 'm' || cadena[posicion] == 'w' )
+        posicion++;                                                                 // De ser valido se avanza en la cadena
+    else
+        NT_error();
+    
     return;
 }
 
 void NT_Sent()
 {
+    // Caso en el que la sentencia es una asignacion
+    if(cadena[posicion] == 'a')
+    {
+        NT_Asig();
+        return;
+    }
+    // Caso en que la sentencia es un break
+    else if (cadena[posicion] == 'u')
+    {
+        NT_Q();
+        return;
+    }
+    // Caso en que la sentencia es un retorno
+    else if (cadena[posicion] == 't')
+    {
+        NT_Ret();
+        return;
+    }
+    // Caso en que la sentencia es trocar
+    else if (cadena[posicion] == 'b')
+    {
+        NT_Trocar();
+        return;
+    }
+    // Caso en que la sentencia es un enquanto
+    else if (cadena[posicion] == 'q')
+    {
+        NT_Enq();
+        return;
+    }
+    // Caso en que la sentencia es un fazer
+    else if (cadena[posicion] == 'z')
+    {
+        NT_Faz();
+        return;
+    }
+    // Caso en que la sentencia es un se
+    else if (cadena[posicion] == 's')
+    {
+        NT_Se();
+        return;
+    }
+    // Caso en que la sentencia es un para
+    else if (cadena[posicion] == 'p')
+    {
+        NT_Para();
+        return;   
+    }
+    // Caso en que la sentencia es un llama
+    else if (cadena[posicion] == '[')
+    {
+        NT_Llama();
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
+    
     return;
 }
 
 void NT_listaS()
 {
+    // Caso en que la lista es vacia
+    if(cadena[posicion] == '#' || cadena[posicion] == '}')
+    {
+        return;                                                                     // Se terminan de verificar las sentencias de la lista
+    }
+    // Caso en que se cuenta con sentecias
+    else if (cadena[posicion] == 'a' || cadena[posicion] == 'u' || cadena[posicion] == 't' ||
+             cadena[posicion] == 'b' || cadena[posicion] == 'q' || cadena[posicion] == 'z' ||
+             cadena[posicion] == 's' || cadena[posicion] == 'p' || cadena[posicion] == '[')
+    {
+        NT_Sent();                                                                  // Se revisa la sentencia
+        NT_listaS();                                                                // Revisamos si hay mas sentecias
+    }
     return;
 }
 
 void NT_expLogica()
 {
+    if(cadena[posicion] == '!')
+    {
+        posicion++;                                                                // Avanzamos la cadena
+        NT_expRel();
+        return;
+    }
+    else if (cadena[posicion] == '(' || cadena[posicion] == 'a' || cadena[posicion] == 'n' ||
+             cadena[posicion] == '[')
+    {
+        NT_R();
+        NT_expLog();
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
+
     return;
 }
 
 void NT_expLog()
 {
+    if(cadena[posicion] == 'h' || cadena[posicion] == 'j')
+    {
+        NT_opLog();
+        NT_R();
+        return;
+    }
+    else if (cadena[posicion] == ')')
+    {
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
+
     return;
 }
 
 void NT_expRel()
 {
+    if (cadena[posicion] == '{')
+    {
+        posicion++;
+        NT_R();
+
+        if (cadena[posicion] == '}')
+            posicion++;
+        else
+            NT_error();
+        
+        return;
+    }
+    else if(cadena[posicion] == '(' || cadena[posicion] == 'a' || cadena[posicion] == 'n' ||
+             cadena[posicion] == '[')
+    {
+        NT_E();
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
     return;
 }
 
 void NT_opLog()
 {
+    if (cadena[posicion] == 'h' || cadena[posicion] == 'j')
+        posicion++;
+    else
+        NT_error();
+    
     return;
 }
 
 void NT_Enq()
 {
+    if (cadena[posicion] == 'q')
+    {
+        posicion++;
+
+        // Verificamos que la condicion abra con (
+        if (cadena[posicion] == '(')
+            posicion++;
+        else 
+            NT_error();
+
+        NT_expLogica();                                                             // Validamos la expresion introducida
+
+        // Verificamos que la condicion cierre con )
+        if (cadena[posicion] == ')')
+            posicion++;
+        else 
+            NT_error();
+
+        // Verificamos que las sentencias comiencen con #
+        if (cadena[posicion] == '#')
+            posicion++;
+        else 
+            NT_error();
+
+        NT_listaS();                                                                // Validamos las sentencias dentro del bucle
+
+        // Verificamos que las sentencias terminen con #
+        if (cadena[posicion] == '#')
+            posicion++;
+        else 
+            NT_error();
+    }
+    else
+    {
+        NT_error();
+    }
     return;
 }
 
 void NT_Se()
 {
+    if (cadena[posicion] == 's')
+    {
+        posicion++;
+
+        // Verificamos que la condicion abra con (
+        if (cadena[posicion] == '(')
+            posicion++;
+        else 
+            NT_error();
+
+        NT_expLogica();                                                             // Validamos la expresion introducida
+
+        // Verificamos que la condicion cierre con )
+        if (cadena[posicion] == ')')
+            posicion++;
+        else 
+            NT_error();
+
+        // Verificamos que las sentencias comiencen con #
+        if (cadena[posicion] == '#')
+            posicion++;
+        else 
+            NT_error();
+
+        NT_listaS();                                                                // Validamos las sentencias dentro del bucle
+
+        // Verificamos que las sentencias terminen con #
+        if (cadena[posicion] == '#')
+            posicion++;
+        else 
+            NT_error();
+
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
     return;
 }
 
 void NT_Q()
 {
+    if (cadena[posicion] == 'u')
+    {
+        posicion++;
+
+        // Verificamos que la linea termine con ;
+        if (cadena[posicion] == ';')
+            posicion++;
+        else 
+            NT_error();
+
+        return;        
+    }
+    else
+    {
+        NT_error();
+    }
+
     return;
 }
 
 void NT_Faz()
 {
+    if (cadena[posicion] == 'z')
+    {
+        posicion++;
+
+        // Verificamos que las sentencias comiencen con #
+        if (cadena[posicion] == '#')
+            posicion++;
+        else 
+            NT_error();
+
+        NT_listaS();                                                                // Validamos las sentencias dentro del bucle
+
+        // Verificamos que las sentencias terminen con #
+        if (cadena[posicion] == '#')
+            posicion++;
+        else 
+            NT_error();
+
+        // Verificamos que se incluya el enquanto
+        if (cadena[posicion] == 'q')
+            posicion++;
+        else 
+            NT_error();
+
+        // Verificamos que la condicion abra con (
+        if (cadena[posicion] == '(')
+            posicion++;
+        else 
+            NT_error();
+
+        NT_expLogica();                                                             // Validamos la expresion introducida
+
+        // Verificamos que la condicion cierre con )
+        if (cadena[posicion] == ')')
+            posicion++;
+        else 
+            NT_error();
+
+        // Verificamos que la sentencia cierre con ;
+        if (cadena[posicion] == ';')
+            posicion++;
+        else 
+            NT_error();
+
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
     return;
 }
 
 void NT_Ret()
 {
+    if (cadena[posicion] == 't')
+    {
+        posicion++;
+        NT_valRet();                                                                // Validamos que el valor de retorno sea correcto
+
+        // Verificamos que la sentencia cierre con ;
+        if (cadena[posicion] == ';')
+            posicion++;
+        else 
+            NT_error();
+
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
+
     return;
 }
 
 void NT_valRet()
 {
+    // Caso en que el valor es nulo
+    if (cadena[posicion] == ';')
+        return;
+    // Caso en el que el valor de retorno es una cadena
+    else if (cadena[posicion] == '{')
+    {
+        posicion++;
+        NT_expCad();
+
+        // Verificamos que la sentencia cierre con }
+        if (cadena[posicion] == '}')
+            posicion++;
+        else 
+            NT_error();
+        
+        return;
+    }
+    // Caso en que el retorno es un valor aritmetico
+    else if (cadena[posicion] == '(' || cadena[posicion] == 'a' || cadena[posicion] == 'n' ||
+             cadena[posicion] == '[')
+    {
+        NT_E();
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
     return;
 }
 
 void NT_expCad()
 {
+    if (cadena[posicion] == 'a' || cadena[posicion] == 'v')
+    {
+        posicion++;
+        NT_opCad();
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
+
     return;
 }
 
 void NT_opCad()
 {
+    // Caso en que el operador cadena es vacio
+    if(cadena[posicion] == '}')
+        return;
+    else if (cadena[posicion] == 'h' || cadena[posicion] == 'l')
+    {
+        posicion++;
+        NT_expCad();
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
+
     return;
 }
 
 void NT_Para()
 {
+    if (cadena[posicion] == 'p')
+    {
+        posicion++;
+
+        // Verificamos que haya un identificador para el ciclo
+        if(cadena[posicion] == 'a')
+            posicion++;
+        else
+            NT_error();
+
+        // Verificamos que los parametros abran con [
+        if(cadena[posicion] == '[')
+            posicion++;
+        else
+            NT_error();
+
+        // Verificamos el valor de inicio
+        if(cadena[posicion] == 'n')
+            posicion++;
+        else
+            NT_error();
+
+        // Verificamos que los separe una coma
+        if(cadena[posicion] == ',')
+            posicion++;
+        else
+            NT_error();
+
+        // Verificamos el valor de final
+        if(cadena[posicion] == 'n')
+            posicion++;
+        else
+            NT_error();
+
+        // Verificamos que los parametros cierren con ]
+        if(cadena[posicion] == ']')
+            posicion++;
+        else
+            NT_error();
+        
+        // Verificamos que las sentencias comiencen con #
+        if (cadena[posicion] == '#')
+            posicion++;
+        else 
+            NT_error();
+
+        NT_listaS();                                                                // Validamos las sentencias dentro del bucle
+
+        // Verificamos que las sentencias terminen con #
+        if (cadena[posicion] == '#')
+            posicion++;
+        else 
+            NT_error();
+
+
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
+
     return;
 }
 
 void NT_Trocar()
 {
+    if (cadena[posicion] == 'b')
+    {
+        posicion++;
+
+        // Verificamos que se abra el parentesis
+        if(cadena[posicion] == '(')
+            posicion++;
+        else
+            NT_error();
+        
+        // Verificamos que haya un identificador
+        if(cadena[posicion] == 'a')
+            posicion++;
+        else
+            NT_error();
+
+        // Verificamos que se cierre el parentesis
+        if(cadena[posicion] == ')')
+            posicion++;
+        else
+            NT_error();
+
+        // Verificamos que inicien los casos
+        if(cadena[posicion] == ':')
+            posicion++;
+        else
+            NT_error();
+
+        // Verificamos que se abra el cuerpo
+        if(cadena[posicion] == '#')
+            posicion++;
+        else
+            NT_error();
+
+        // Verificamos que mencione el caso
+        if(cadena[posicion] == 'c')
+            posicion++;
+        else
+            NT_error();
+
+        // Verificamos que se abra el parentesis
+        if(cadena[posicion] == '(')
+            posicion++;
+        else
+            NT_error();
+        
+        // Verificamos que haya un valor a comparar
+        if(cadena[posicion] == 'n')
+            posicion++;
+        else
+            NT_error();
+
+        // Verificamos que se cierre el parentesis
+        if(cadena[posicion] == ')')
+            posicion++;
+        else
+            NT_error();
+
+        // Verificamos que las llaves de sentencia abran
+        if(cadena[posicion] == '{')
+            posicion++;
+        else
+            NT_error();
+
+        NT_listaS();                                                                // Corroboramos la validez de la lista de sentencias
+
+        // Verificamos que las llaves de sentencia cierren
+        if(cadena[posicion] == '}')
+            posicion++;
+        else
+            NT_error();
+
+        NT_casos();                                                                 // Comprobamos si hay mas casos
+        
+        // Verificamos que se cierre el cuerpo
+        if(cadena[posicion] == '#')
+            posicion++;
+        else
+            NT_error();
+
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
     return;
 }
 
 void NT_casos()
 {
+    // Ya no hay casos por revisar
+    if(cadena[posicion] == '#')
+        return;
+    // caso valido
+    else if(cadena[posicion] == 'c')
+    {
+        posicion++;
+
+        // Verificamos que se abra el parentesis
+        if(cadena[posicion] == '(')
+            posicion++;
+        else
+            NT_error();
+        
+        // Verificamos que haya un valor a comparar
+        if(cadena[posicion] == 'n')
+            posicion++;
+        else
+            NT_error();
+
+        // Verificamos que se cierre el parentesis
+        if(cadena[posicion] == ')')
+            posicion++;
+        else
+            NT_error();
+
+        // Verificamos que las llaves de sentencia abran
+        if(cadena[posicion] == '{')
+            posicion++;
+        else
+            NT_error();
+
+        NT_listaS();                                                                // Corroboramos la validez de la lista de sentencias
+
+        // Verificamos que las llaves de sentencia cierren
+        if(cadena[posicion] == '}')
+            posicion++;
+        else
+            NT_error();
+
+        NT_casos();                                                                 // Comprobamos si hay mas casos
+        
+        return;
+    }
+    // Caso default
+    else if(cadena[posicion] == '(')
+    {
+        posicion++;
+
+        // Verificamos que se cierre el parentesis
+        if(cadena[posicion] == ')')
+            posicion++;
+        else
+            NT_error();
+
+        // Verificamos que las llaves de sentencia abran
+        if(cadena[posicion] == '{')
+            posicion++;
+        else
+            NT_error();
+
+        NT_listaS();                                                                // Corroboramos la validez de la lista de sentencias
+
+        // Verificamos que las llaves de sentencia cierren
+        if(cadena[posicion] == '}')
+            posicion++;
+        else
+            NT_error();
+
+        NT_casos();
+
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
+
     return;
 }
 
 void NT_Llama()
 {
+    if (cadena[posicion] == '[')
+    {
+        posicion++;
+
+        // Verificamos que haya identificador para llamar
+        if(cadena[posicion] == 'a')
+            posicion++;
+        else
+            NT_error();
+
+        // Verificamos que abra parentesis para la lista de parametros
+        if(cadena[posicion] == '(')
+            posicion++;
+        else
+            NT_error();
+
+        NT_listP();                                                                 // Revisa los parametros de la funcion
+    
+        // Verificamos que cierren los parentesis de parametros
+        if(cadena[posicion] == ')')
+            posicion++;
+        else
+            NT_error();
+
+        // Verificamos que cierren los corchetes de la llamada
+        if(cadena[posicion] == ']')
+            posicion++;
+        else
+            NT_error();
+
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
+
     return;
 }
 
 void NT_listP()
 {
+    // Caso en el que ya no hay parametros
+    if(cadena[posicion] == ')')
+        return;
+    // Parametros aritmeticos
+    else if (cadena[posicion] == '(' || cadena[posicion] == 'a' || cadena[posicion] == 'n' ||
+             cadena[posicion] == '[')
+    {
+        NT_E();                                                                     // Se valida la expresion aritmetica
+        NT_Param();                                                                 // Revisamos si hay mas parametros
+        return;
+    }
+    //  Parametros cadena
+    else if(cadena[posicion] == '{')
+    {
+        posicion++;
+        NT_expCad();
+        
+        // Verificamos que cierre la llave de la cadena
+        if(cadena[posicion] == '}')
+            posicion++;
+        else
+            NT_error();
+
+        NT_Param();                                                                 // Verifica si aun quedan parametros sin revisar
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
+    
     return;
 }
 
 void NT_Param()
 {
+    // Caso en que no hay mas parametros
+    if (cadena[posicion] == ')')
+        return;
+    else if (cadena[posicion] == ',')
+    {
+        posicion++;
+        NT_listP();
+        return;
+    }
+    else
+    {
+        NT_error();
+    }
+
     return;
 }
 
 void NT_error()
 {
-    printf("\nError en el atomo %i de la cadena\n", posicion);
+    printf("\nError en el atomo %c en la posicon %i de la cadena\n", cadena[posicion], posicion);     // Se informa el error en el atomo
+    correcta = 0;                                                                   // Se marca la cadena como incorrecta
     return;
 }
