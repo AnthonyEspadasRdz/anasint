@@ -1,6 +1,0 @@
-assinado _principal()
-{
-    inteiro _val1 = 15;
-    flutuador _cadena = "hola";
-    [_fun1(_cadena, _val1)]
-}
